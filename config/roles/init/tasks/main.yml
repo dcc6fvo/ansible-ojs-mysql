@@ -1,0 +1,29 @@
+---    
+  - name: 'Upgrade all packages to the latest version'
+    apt:
+      name: "*"
+      state: latest
+    become: true
+
+  - name: 'Install dependency packages'
+    apt:
+      name: "{{item}}"
+      state: latest
+    loop: 
+      - curl
+      - unzip
+      - default-mysql-server
+      - php{{php_version}}
+      - php-fpm
+      - php-xml
+      - php-mbstring
+      - php-mysql
+      - php-ldap
+      - apache2 
+      - libapache2-mod-php
+      - python3-pip
+  
+  - name: 'Install PyMySQL from pip'
+    pip:
+      name: pymysql
+      state: present

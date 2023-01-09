@@ -1,0 +1,48 @@
+---
+  - name: 'Auth ldap app unzipping'
+    unarchive:
+      src: 'https://github.com/shemgp/ojs_ldap_plugin/archive/refs/heads/master.zip'
+      dest: '/var/www/{{domain}}/public/plugins/generic/'
+      remote_src: yes
+      creates: '/var/www/{{domain}}/public/plugins/generic/ldap/index.php'
+      owner: www-data
+      group: www-data
+
+  - name: 'Create ldap directory'
+    file:
+      path: '/var/www/{{domain}}/public/plugins/generic/ldap/'
+      state: directory
+      owner: www-data
+      group: www-data
+      mode: 0770
+      recurse: yes
+
+  - name: 'Check if ldap app was extracted'
+    stat:
+      path: '/var/www/{{domain}}/public/plugins/generic/ojs_ldap_plugin-master'
+    register: check_file_name
+
+  - name: 'Copy ldap app to the new ldap folder'
+    copy:
+      src: '/var/www/{{domain}}/public/plugins/generic/ojs_ldap_plugin-master/'
+      dest: '/var/www/{{domain}}/public/plugins/generic/ldap'
+      remote_src: yes
+      owner: www-data
+      group: www-data
+      mode: 0770
+    when: check_file_name.stat.exists
+
+  - name: 'Remove old ldap app folder'
+    file:
+      path: '/var/www/{{domain}}/public/plugins/generic/ojs_ldap_plugin-master/'
+      state: absent
+    when: check_file_name.stat.exists
+
+  - name: "Copying ldap cache file"
+    copy:
+      src: 'files/fc-pluginSettings-0-ldapauthplugin.php'
+      dest: '/var/www/{{domain}}/public/cache/fc-pluginSettings-0-ldapauthplugin.php'
+      owner: www-data
+      group: www-data
+      force: no
+      mode: 770

@@ -1,0 +1,6 @@
+---
+  - name: 'restart {{db}}'
+    service:
+      name: '{{db}}'
+      state: restarted
+    become: true

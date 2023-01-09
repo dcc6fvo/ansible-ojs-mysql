@@ -1,0 +1,135 @@
+---
+  - name: Creates the directory app
+    file:
+      path: '{{ www_dir }}'
+      state: directory
+      owner: www-data
+      group: www-data
+
+  - name: 'Create public directory'
+    file:
+      path: '{{ www_dir }}/public'
+      state: directory
+      owner: www-data
+      group: www-data
+      mode: 0770
+      recurse: yes
+
+  - name: 'Create files directory'
+    file:
+      path: '{{ www_dir }}/files'
+      state: directory
+      owner: www-data
+      group: www-data
+      mode: 0770
+      recurse: yes
+
+  - name: 'Create log directory'
+    file:
+      path: '{{ www_dir }}/log'
+      state: directory
+      owner: www-data
+      group: www-data
+      mode: 0770
+      recurse: yes
+
+  - name: 'Create Apache2 SSL directory'
+    file:
+      path: /etc/apache2/ssl
+      state: directory
+      owner: root
+      group: root
+      mode: 0644   
+
+  - name: 'Web app unzipping'
+    unarchive:
+      src: 'https://pkp.sfu.ca/ojs/download/ojs-{{ojs_version}}.tar.gz'
+      #src: 'https://github.com/pkp/ojs/archive/refs/heads/stable-3_3_0.zip'
+      dest: '{{ www_dir }}/public'
+      remote_src: yes
+      creates: '{{ www_dir }}/public/index.php'
+      extra_opts: '--strip=1'
+      owner: www-data
+      group: www-data
+   
+  - name: "Copying certificate files"
+    copy:
+      src: "{{ item }}"
+      dest: /etc/apache2/ssl/
+      owner: root
+      group: root
+      force: no
+      mode: 0600
+    with_fileglob:
+    - "/keys/ssl/*"
+    
+  #- name: 'Enable apache2 rewrite module'
+  #  apache2_module:
+  #    state: present
+  #    name: rewrite
+  #    ignore_configcheck: true
+  #    force: true
+  
+  - name: 'enable mod_rewrite'
+    command: a2enmod rewrite
+
+  #- name: 'Enable apache2 ssl module'
+  #  apache2_module:
+  #    state: present
+  #    name: ssl
+  #    ignore_configcheck: true
+  #    force: true
+  
+  - name: 'enable mod_ssl'
+    command: a2enmod ssl
+    notify:
+      - restart apache2
+
+  - name: 'Setting app config php'
+    template:
+      src: 'templates/config.inc.php.j2'
+      dest: '{{www_dir}}/public/config.inc.php'    
+
+  - name: 'Configuring HTTP webapp on apache2'
+    template:
+      src: 'templates/000-default.conf.j2'
+      dest: '/etc/apache2/sites-available/{{domain}}.conf'
+  
+  - name: 'Configuring HTTPS webapp on apache2'
+    template:
+      src: 'templates/default-ssl.conf.j2'
+      dest: '/etc/apache2/sites-available/{{domain}}-ssl.conf'
+
+  - name: 'Disabling default site apache2 '
+    command: 'a2dissite 000-default.conf'
+  
+  - name: 'Enabling site apache2 {{ domain }} '
+    command: 'a2ensite {{ domain }}.conf'
+  
+  - name: 'Enabling site apache2 {{ domain }}-ssl.conf '
+    command: 'a2ensite {{ domain }}-ssl.conf'
+    notify:
+      - reload apache2
+
+  - name: 'set PHP apache2 upload_max_filesize'
+    ini_file:
+      path: /etc/php/7.4/apache2/php.ini
+      section: PHP
+      option: upload_max_filesize
+      value: 30M
+
+  - name: 'set PHP cli upload_max_filesize'
+    ini_file:
+      path: /etc/php/7.4/cli/php.ini
+      section: PHP
+      option: upload_max_filesize
+      value: 30M
+    
+  - name: 'set PHP fpm upload_max_filesize'
+    ini_file:
+      path: /etc/php/7.4/fpm/php.ini
+      section: PHP
+      option: upload_max_filesize
+      value: 30M
+    notify:
+      - restart apache2

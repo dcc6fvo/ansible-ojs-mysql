@@ -1,0 +1,23 @@
+---
+  - hosts: ojs
+    vars:
+      domain: '192.168.56.11'
+      www_dir: '/var/www/192.168.56.11'
+      dirIndex: 'index.php'
+      #db: 'mariadb'
+      db: 'mysql'
+      db_name: 'ojs2-db'
+      db_user: 'ojs2'
+      db_user_pass: 'asdfasdfasdfasdfasdasdfas'
+      db_host: 'localhost'
+      ojs_version: '3.2.1-4'
+      #php_version: '7.4'
+      php_version: '7.2'
+      #mysql_cfg: '/etc/mysql/mariadb.conf.d/50-server.cnf'
+      mysql_cfg: '/etc/mysql/mysql.conf.d/mysqld.cnf'
+    roles:
+      - { role: init, become: yes }
+      - { role: mysql, become: yes }
+      - { role: ojs, become: yes }
+      - { role: auth-ldap, become: yes }
+

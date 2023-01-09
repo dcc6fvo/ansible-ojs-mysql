@@ -1,0 +1,11 @@
+---
+#ojs_version: '3.3.0-13'
+
+www_dir: '/var/www/public/'
+
+ssl_dir: '/etc/apache2/ssl'
+ssl_cert_file: 'yourdomain.crt'
+ssl_cert_key_file: 'yourdomain.key'
+ssl_chain_file: 'intermediate.crt'
+
+email_cti: 'youremail@yourhost.com'

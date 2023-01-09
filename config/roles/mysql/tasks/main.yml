@@ -1,0 +1,40 @@
+---
+  - name: 'Create {{db}} database'
+    mysql_db: 
+      login_unix_socket: /var/run/mysqld/mysqld.sock
+      name: '{{ db_name }}'
+      state: present
+
+  - name: 'Create {{db}} User'
+    mysql_user: 
+      login_unix_socket: /var/run/mysqld/mysqld.sock
+      host: '%'
+      name: '{{ db_user }}'
+      password: '{{ db_user_pass }}'
+      priv: '{{ db_name }}.*:ALL'
+      state: present
+    no_log: true
+    
+  - name: 'Allowing {{db}} remote connections'     
+    replace:
+      path: '{{mysql_cfg}}'
+      regexp: "{{ item.regex }}"
+      replace: "{{ item.value }}"
+    with_items:
+      - { regex: '127.0.0.1', value: '0.0.0.0'}
+    notify:
+      - restart {{db}}
+
+  - name: 'Copy {{db}} database dump file to remote host'
+    copy:
+      src: 'files/dump-ojs.sql'
+      dest: /tmp
+
+  - name: 'Restoring {{db}} database'
+    mysql_db:
+      login_host: '{{ db_host }}'
+      login_user: '{{ db_user }}'
+      login_password: '{{ db_user_pass }}'
+      name: '{{ db_name }}'
+      state: import
+      target: '/tmp/dump-ojs.sql'
